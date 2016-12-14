@@ -1,0 +1,9 @@
+F:\test\sonarQubeScanner\sonarQubeScanner\bin\Debug\sonarQubeScanner.exe.config
+F:\test\sonarQubeScanner\sonarQubeScanner\bin\Debug\sonarQubeScanner.exe
+F:\test\sonarQubeScanner\sonarQubeScanner\bin\Debug\sonarQubeScanner.pdb
+F:\test\sonarQubeScanner\sonarQubeScanner\obj\Debug\sonarQubeScanner.csprojResolveAssemblyReference.cache
+F:\test\sonarQubeScanner\sonarQubeScanner\obj\Debug\sonarQubeScanner.Properties.Resources.resources
+F:\test\sonarQubeScanner\sonarQubeScanner\obj\Debug\sonarQubeScanner.csproj.GenerateResource.Cache
+F:\test\sonarQubeScanner\sonarQubeScanner\obj\Debug\sonarQubeScanner.exe
+F:\test\sonarQubeScanner\sonarQubeScanner\obj\Debug\sonarQubeScanner.pdb
+F:\test\sonarQubeScanner\sonarQubeScanner\obj\Debug\sonarQubeScanner.frmMain.resources
