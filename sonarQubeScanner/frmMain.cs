@@ -180,10 +180,22 @@ namespace sonarQubeScanner
 
         private void cmd_OpenProjectFolder_Click(object sender, EventArgs e)
         {
-            folderBrowserDialog_ProjectFolder.RootFolder = Environment.SpecialFolder.Desktop;
-            if(folderBrowserDialog_ProjectFolder.ShowDialog()==System.Windows.Forms.DialogResult.OK)
+            try
             {
-                txt_ProjectFolder.Text = folderBrowserDialog_ProjectFolder.SelectedPath;
+                folderBrowserDialog_ProjectFolder.RootFolder = Environment.SpecialFolder.Desktop;
+                if (folderBrowserDialog_ProjectFolder.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    txt_ProjectFolder.Text = folderBrowserDialog_ProjectFolder.SelectedPath;
+
+                    System.IO.DirectoryInfo l_SelectPathFolder = new DirectoryInfo(folderBrowserDialog_ProjectFolder.SelectedPath);
+
+                    txt_ProjectKey.Text = l_SelectPathFolder.Name;
+                    txt_ProjectName.Text = l_SelectPathFolder.Name;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex.Message);
             }
         }
 
@@ -244,14 +256,6 @@ namespace sonarQubeScanner
                 ShowError(ex.Message);
                 SettingButtons(false);
             }
-        }
-
-        private string GetProjectParameter()
-        {
-            StringBuilder l_scannerParameter = new StringBuilder();
-
-
-            return l_scannerParameter.ToString();
         }
     }
 }
