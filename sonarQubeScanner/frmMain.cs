@@ -11,6 +11,7 @@ using System.Windows.Forms;
 
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 
 namespace sonarQubeScanner
 {
@@ -18,19 +19,28 @@ namespace sonarQubeScanner
     public delegate void DelReadStdOutput(string result);
     public delegate void DelReadErrOutput(string result);
     public delegate void DelRunCompleted(string completeMessage);
+    
 
     public partial class FrmMain : Form
     {
         // 2.定义委托事件  
         public event DelReadStdOutput ReadStdOutput;
         public event DelReadErrOutput ReadErrOutput;
-        public event DelRunCompleted RunCompleted;  
+        public event DelRunCompleted RunCompleted;
+        public string mc_runPath = string.Empty;
+        public string mc_sonarRunnerUrl = "https://sonarsource.bintray.com/Distribution/sonar-scanner-cli/sonar-scanner-2.8.zip";
+        public string mc_sonarRunnerZipFile = "sonar-scanner-2.8.zip";
+        public string mc_sonarRunnerFolderName = "sonar-scanner-2.8";
 
         public FrmMain()
         {
-            InitializeComponent();            
+            InitializeComponent();
 
             Init();
+
+            mc_runPath = Path.GetDirectoryName(Application.ExecutablePath);
+            CheckZipFileExist();
+            ChecksonarScannerFolder();
         }
 
         private void Init()
@@ -140,6 +150,11 @@ namespace sonarQubeScanner
         {
             MessageBox.Show(pi_message);
         }
+        
+        public void ShowError(Exception ex)
+        {
+            MessageBox.Show(ex.StackTrace, "sonarQube Scanner Tool Error Message");
+        }
 
         public bool check_projectParameter()
         {
@@ -178,6 +193,31 @@ namespace sonarQubeScanner
             return l_returnFlag;
         }
 
+        public void CheckZipFileExist()
+        {
+            string l_zipFileFullPath = mc_runPath + "\\"+mc_sonarRunnerZipFile;
+            if (File.Exists(l_zipFileFullPath))
+            {
+                btn_downloadsonarScanner.Enabled = false;
+            }
+        }
+
+        public void ChecksonarScannerFolder()
+        {
+            string l_sonarScannPath = mc_runPath + "\\" + mc_sonarRunnerFolderName;
+            if(!Directory.Exists(l_sonarScannPath))
+            {
+                btn_runner.Enabled = false;
+                btn_unzipAndSettingParameter.Enabled = false;
+            }
+            else
+            {
+                btn_runner.Enabled = true;
+                btn_unzipAndSettingParameter.Enabled = true;
+            }
+        }
+
+        //-------------------------------------------------------------------------------------------------
         private void cmd_OpenProjectFolder_Click(object sender, EventArgs e)
         {
             try
@@ -211,6 +251,7 @@ namespace sonarQubeScanner
                 string l_root = Path.GetPathRoot(txt_ProjectFolder.Text.Trim());
 
                 StringBuilder l_strParameter = new StringBuilder();
+                l_strParameter.Append(" -X");
                 l_strParameter.Append(string.Format(" -Dsonar.projectKey=\"{0}\"", txt_ProjectKey.Text.Trim()));
                 l_strParameter.Append(string.Format(" -Dsonar.projectName=\"{0}\"", txt_ProjectName.Text.Trim()));
                 l_strParameter.Append(string.Format(" -Dsonar.projectVersion=\"{0}\"", txt_ProjectVersion.Text.Trim()));
@@ -257,5 +298,92 @@ namespace sonarQubeScanner
                 SettingButtons(false);
             }
         }
-    }
+
+        private void btn_run_preview_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (!check_projectParameter()) return;
+                if (string.IsNullOrEmpty(txt_github_token.Text.Trim())) return;
+                if (string.IsNullOrEmpty(txt_sonarqube_token.Text.Trim())) return;
+                if (string.IsNullOrEmpty(txt_github_pullrequestid.Text.Trim())) return;
+                if (string.IsNullOrEmpty(txt_github_repository.Text.Trim())) return;
+
+                SettingButtons(true);
+
+                string pi_path = System.AppDomain.CurrentDomain.BaseDirectory;
+                string l_root = Path.GetPathRoot(txt_ProjectFolder.Text.Trim());
+
+                StringBuilder l_strParameter = new StringBuilder();
+
+                l_strParameter.Append(" -X");
+                l_strParameter.Append(" -Dsonar.analysis.mode=preview");
+                l_strParameter.Append(string.Format(" -Dsonar.github.pullRequest={0}", txt_github_pullrequestid.Text.Trim()));
+                l_strParameter.Append(string.Format(" -Dsonar.github.repository={0}", txt_github_repository.Text.Trim()));
+                l_strParameter.Append(string.Format(" -Dsonar.github.oauth={0}", txt_github_token.Text.Trim()));
+                l_strParameter.Append(" -Dsonar.host.url=http://localhost:9000/");
+                l_strParameter.Append(string.Format(" -Dsonar.login={0}", txt_sonarqube_token.Text.Trim()));
+                l_strParameter.Append(string.Format(" -Dsonar.projectKey=\"{0}\"", txt_ProjectKey.Text.Trim()));
+                l_strParameter.Append(string.Format(" -Dsonar.sources=\"{0}\"", txt_Source.Text.Trim()));
+
+                string cmd = string.Format("{0}&cd {1}&{2}sonar-scanner-2.8\\bin\\sonar-scanner {3}&exit", l_root.Substring(0, l_root.Length - 1), txt_ProjectFolder.Text.Trim(), pi_path, l_strParameter.ToString());
+
+
+                RealAction("cmd.exe", cmd);
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex.Message);
+                SettingButtons(false);
+            }
+        }
+        //-------------------------------------------------------------------------------------------------        
+
+        private void btn_downloadsonarScanner_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                WebClient client = new WebClient();
+                string l_zipFileFullPath = mc_runPath + "\\" + mc_sonarRunnerZipFile;
+                if (File.Exists(l_zipFileFullPath))
+                {
+                    File.Delete(l_zipFileFullPath);
+                }
+
+                client.DownloadFile(mc_sonarRunnerUrl, l_zipFileFullPath);
+                CheckZipFileExist();
+
+                btn_unzipAndSettingParameter.Enabled=true;
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex);
+            }
+        }
+
+        private void btn_unzipAndSettingParameter_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                string l_zipFilePath=mc_runPath+"\\"+mc_sonarRunnerZipFile;
+                string l_sonarScannerFolder=mc_runPath+"\\"+mc_sonarRunnerFolderName;
+                if(!Directory.Exists(l_sonarScannerFolder))
+                {
+                    Directory.CreateDirectory(l_sonarScannerFolder);
+                }
+
+                ZipHelper.UnZip(l_zipFilePath, mc_runPath, "", true);
+
+                ChecksonarScannerFolder();
+
+                sonarScannParameterHelper l_class=new sonarScannParameterHelper(mc_runPath+"\\"+"sonar-scanner-2.8\\conf\\sonar-scanner.properties");
+                string l_getvalue=l_class.GetSonarScannerValue("sonar.jdbc.username");
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex);
+            }
+        }
+
+    }    
 }
